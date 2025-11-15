@@ -54,19 +54,6 @@ const zip = <A, B>(arr1: A[], arr2: B[]): [A, B][] =>
 const tranding = (rates: number[]): boolean =>
     rates.length > 1 && zip(rates, rates.slice(1)).every(([prevRate, rate]) => rate > prevRate)
 
-/**
- * это аналог из скалы
- * def lastRates(from: Currency, to: Currency): IO[List[BigDecimal]] = {
- *     for {
- *         table1 <- retry(exchangeTable(from), 10)
- *         table2 <- retry(exchangeTable(from), 10)
- *         table3 <- retry(exchangeTable(from), 10)
- *         lastTables = List(table1, table2, table3)
- *     } yield lastTables.flatMap(_.get(Currency(to)))
- * }
- *
- * exchangeTable возвращает IO[Map[Currency, BigDecimal]]
- */
 const lastRates = (key: TKey, n: number): IO<number[]> =>
     IO.SequencePar(Array.from({ length: n }, () => getPupaOrLupa(key)))
 
@@ -81,17 +68,19 @@ const exchangeIfTranding = (amount: number, key: TKey): IO<number> =>
                 : exchangeIfTranding(amount, key),
         )
 
-const start = () => {
-    ratesHistory.value.length = 0
-    result.value = 0
+const exchangeIfTrandingOption = (): Promise<Option<number>> =>
     exchangeIfTranding(1000, 'pupa')
         .run()
-        .then((res) => {
-            result.value = res
-        })
+        .then((res) => Option.fromNullable(res))
         .catch((err) => {
-            console.log('laterBitches err', err)
+            console.log('exchangeIfTranding err', err)
+            return Option.None()
         })
+
+const start = async () => {
+    ratesHistory.value.length = 0
+    result.value = 0
+    result.value = (await exchangeIfTrandingOption()).getOrElse(0)
 }
 </script>
 
@@ -101,7 +90,7 @@ const start = () => {
         <button @click="start">start</button>
 
         <p v-for="rate in ratesHistory" :key="JSON.stringify(rate)">{{ rate }}</p>
-        <p>result: {{ result }}</p>
+        <p>result: {{ result }} {{ ratesHistory.length }}</p>
     </div>
 </template>
 
