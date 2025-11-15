@@ -17,10 +17,10 @@ const dirtyRequest = (): Promise<Record<string, number>> =>
     })
 
 // оборачиваем наш грязный код в ИО
-const getKeyFromDirty = (): IO<Record<string, number>> => IO.Delay(dirtyRequest)
+const getKeyFromDirty: IO<Record<string, number>> = IO.Delay(dirtyRequest)
 
 const getPupaOrLupa = (key: TKey): IO<number> =>
-    retry(getKeyFromDirty(), 10).flatMap((rate) =>
+    retry(getKeyFromDirty, 10).flatMap((rate) =>
         Option.fromNullable(rate[key]).match({
             some: (v) => IO.Of(v),
             none: () => getPupaOrLupa(key),

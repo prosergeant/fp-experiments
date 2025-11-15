@@ -13,6 +13,11 @@ const router = createRouter({
             path: '/io/test2',
             component: () => import('@/pages/io/Test2.vue'),
         },
+        {
+            name: 'IO-Test3',
+            path: '/io/test3',
+            component: () => import('@/pages/io/Test3.vue'),
+        },
     ],
 })
 

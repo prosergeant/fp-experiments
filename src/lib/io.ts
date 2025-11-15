@@ -45,3 +45,92 @@ export class IO<A> {
         })
     }
 }
+
+export class StreamIO<A> {
+    constructor(readonly gen: () => AsyncIterable<IO<A>>) {}
+
+    // from array of IO
+    static fromIOArray<A>(arr: IO<A>[]): StreamIO<A> {
+        return new StreamIO(async function* () {
+            for (const io of arr) yield io
+        })
+    }
+
+    // from array of raw values
+    static fromArray<A>(arr: A[]): StreamIO<A> {
+        return StreamIO.fromIOArray(arr.map(IO.Of))
+    }
+
+    map<B>(f: (a: A) => B): StreamIO<B> {
+        const self = this
+        return new StreamIO(async function* () {
+            for await (const io of self.gen()) {
+                yield io.map(f)
+            }
+        })
+    }
+
+    flatMap<B>(f: (a: A) => StreamIO<B>): StreamIO<B> {
+        const self = this
+        return new StreamIO(async function* () {
+            for await (const io of self.gen()) {
+                const a = await io.run()
+                const inner = f(a)
+                for await (const io2 of inner.gen()) {
+                    yield io2
+                }
+            }
+        })
+    }
+
+    filter(p: (a: A) => boolean): StreamIO<A> {
+        const self = this
+        return new StreamIO(async function* () {
+            for await (const io of self.gen()) {
+                const a = await io.run()
+                if (p(a)) yield IO.Of(a)
+            }
+        })
+    }
+
+    tap(f: (a: A) => IO<any>): StreamIO<A> {
+        const self = this
+        return new StreamIO(async function* () {
+            for await (const io of self.gen()) {
+                const a = await io.run()
+                await f(a).run()
+                yield IO.Of(a)
+            }
+        })
+    }
+
+    take(n: number): StreamIO<A> {
+        const self = this
+        return new StreamIO(async function* () {
+            let i = 0
+            for await (const io of self.gen()) {
+                if (i++ >= n) break
+                yield io
+            }
+        })
+    }
+
+    repeat(): StreamIO<A> {
+        const self = this
+        return new StreamIO(async function* () {
+            while (true) {
+                for await (const io of self.gen()) {
+                    yield io
+                }
+            }
+        })
+    }
+
+    async runCollect(): Promise<A[]> {
+        const out: A[] = []
+        for await (const io of this.gen()) {
+            out.push(await io.run())
+        }
+        return out
+    }
+}
