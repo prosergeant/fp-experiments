@@ -18,6 +18,11 @@ const router = createRouter({
             path: '/io/test3',
             component: () => import('@/pages/io/Test3.vue'),
         },
+        {
+            name: 'IO-Test4',
+            path: '/io/test4',
+            component: () => import('@/pages/io/Test4.vue'),
+        },
     ],
 })
 
