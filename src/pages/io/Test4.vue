@@ -42,7 +42,7 @@ const exchangeIfTranding = (amount: number, key: TKey): IO<number> =>
         .take(1)
         .compile()
         .toArray()
-        .map((n) => n?.[0])
+        .map((n) => n.flat())
         .map((n) => n?.[n?.length - 1])
         .map((n) => (n || 0) * amount)
 
