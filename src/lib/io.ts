@@ -169,11 +169,74 @@ export class StreamIO<A> {
         })
     }
 
-    async runCollect(): Promise<A[]> {
-        const out: A[] = []
-        for await (const io of this.gen()) {
-            out.push(await io.run())
+    sliding(n: number): StreamIO<A[]> {
+        const self = this
+
+        return new StreamIO(async function* () {
+            if (n <= 0) {
+                throw new Error('sliding window size must be > 0')
+            }
+
+            const buffer: A[] = []
+
+            for await (const io of self.gen()) {
+                const value = await io.run()
+
+                // Добавляем новое значение
+                buffer.push(value)
+
+                // Если переполнились — удаляем старое
+                if (buffer.length > n) {
+                    buffer.shift()
+                }
+
+                // Начинаем yield'ить когда буфер заполнен
+                if (buffer.length === n) {
+                    yield IO.Of([...buffer])
+                }
+            }
+        })
+    }
+
+    append(other: () => StreamIO<A>): StreamIO<A> {
+        const self = this
+
+        return new StreamIO(async function* () {
+            // Первый поток
+            for await (const io of self.gen()) {
+                yield io
+            }
+
+            // Лениво создаём второй поток
+            const snd = other()
+
+            for await (const io of snd.gen()) {
+                yield io
+            }
+        })
+    }
+
+    compile() {
+        const self = this
+
+        return {
+            toArray(): IO<A[]> {
+                return IO.Delay(async () => {
+                    const out: A[] = []
+                    for await (const io of self.gen()) {
+                        out.push(await io.run())
+                    }
+                    return out
+                })
+            },
+
+            drain(): IO<void> {
+                return IO.Delay(async () => {
+                    for await (const io of self.gen()) {
+                        await io.run()
+                    }
+                })
+            },
         }
-        return out
     }
 }
