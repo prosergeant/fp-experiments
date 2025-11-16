@@ -1,3 +1,5 @@
+import { Option } from '@/lib/option'
+
 export class IO<A> {
     private constructor(private readonly thunk: () => Promise<A>) {}
 
@@ -122,6 +124,47 @@ export class StreamIO<A> {
                 for await (const io of self.gen()) {
                     yield io
                 }
+            }
+        })
+    }
+
+    unNone<B>(this: StreamIO<Option<B>>): StreamIO<B> {
+        const self = this
+        return new StreamIO(async function* () {
+            for await (const io of self.gen()) {
+                const opt = await io.run()
+                if (opt.isSome()) {
+                    yield IO.Of(opt.value)
+                }
+            }
+        })
+    }
+
+    orElse(other: () => StreamIO<A>): StreamIO<A> {
+        const self = this
+
+        return new StreamIO(async function* () {
+            try {
+                for await (const io of self.gen()) {
+                    try {
+                        const v = await io.run()
+                        yield IO.Of(v)
+                    } catch (ioErr) {
+                        // Ошибка внутри IO — fallback
+                        const fallback = other()
+                        for await (const io2 of fallback.gen()) {
+                            yield io2
+                        }
+                        return
+                    }
+                }
+            } catch (streamErr) {
+                // Ошибка в самом генераторе — тоже fallback
+                const fallback = other()
+                for await (const io2 of fallback.gen()) {
+                    yield io2
+                }
+                return
             }
         })
     }
