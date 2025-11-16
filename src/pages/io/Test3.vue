@@ -1,3 +1,4 @@
+<!--suppress LanguageDetectionInspection -->
 <script setup lang="ts">
 import { IO, StreamIO } from '@/lib/io'
 
@@ -57,6 +58,18 @@ infinityDieCastStream
 
 // 5) вернуть первые три результата без изменений, а следующие три —
 // с утроением (всего должно быть шесть результатов).
+infinityDieCastStream
+    .take(3)
+    .runCollect()
+    .then((res1) =>
+        infinityDieCastStream
+            .take(3)
+            .map((n) => n * 3)
+            .runCollect()
+            .then((res2) => {
+                console.log('5)', res1.concat(res2))
+            }),
+    )
 </script>
 
 <template>
