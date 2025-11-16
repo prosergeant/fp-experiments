@@ -15,7 +15,9 @@ const infinityDieCastStream = StreamIO.fromIOArray([castTheDie]).repeat()
 infinityDieCastStream
     .filter((n) => n % 2 !== 0)
     .take(3)
-    .runCollect()
+    .compile()
+    .toArray()
+    .run()
     .then((res) => console.log('1)', res))
 
 // 2) вернуть результаты первых пяти бросков кубика, но при этом
@@ -24,7 +26,9 @@ infinityDieCastStream
 infinityDieCastStream
     .take(5)
     .map((n) => (n === 6 ? 12 : n))
-    .runCollect()
+    .compile()
+    .toArray()
+    .run()
     .then((res) => {
         console.log('2) 6 * 2', res)
     })
@@ -32,7 +36,9 @@ infinityDieCastStream
 // 3) вернуть сумму результатов первых трех бросков;
 infinityDieCastStream
     .take(3)
-    .runCollect()
+    .compile()
+    .toArray()
+    .run()
     .then((res) => {
         console.log(
             '3) sum',
@@ -46,30 +52,21 @@ infinityDieCastStream
 infinityDieCastStream
     .filter((n) => n === 5)
     .take(1)
-    .runCollect()
-    .then((res) =>
-        infinityDieCastStream
-            .take(2)
-            .runCollect()
-            .then((res2) => {
-                console.log('4)', res.concat(res2))
-            }),
-    )
+    .append(() => infinityDieCastStream.take(2))
+    .compile()
+    .toArray()
+    .run()
+    .then((res) => console.log('4)', res))
 
 // 5) вернуть первые три результата без изменений, а следующие три —
 // с утроением (всего должно быть шесть результатов).
 infinityDieCastStream
     .take(3)
-    .runCollect()
-    .then((res1) =>
-        infinityDieCastStream
-            .take(3)
-            .map((n) => n * 3)
-            .runCollect()
-            .then((res2) => {
-                console.log('5)', res1.concat(res2))
-            }),
-    )
+    .append(() => infinityDieCastStream.take(3).map((n) => n * 3))
+    .compile()
+    .toArray()
+    .run()
+    .then((res) => console.log('5)', res))
 </script>
 
 <template>
