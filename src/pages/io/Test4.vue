@@ -42,11 +42,9 @@ const exchangeIfTranding = (amount: number, key: TKey): IO<number> =>
         .take(1)
         .compile()
         .toArray()
-        .map((multyArr) => {
-            const res = multyArr?.[0] || []
-            return res?.[res.length - 1] || 0
-        })
-        .map((n) => n * amount)
+        .map((n) => n?.[0])
+        .map((n) => n?.[n?.length - 1])
+        .map((n) => (n || 0) * amount)
 
 const res = ref(0)
 const start = async () => {
