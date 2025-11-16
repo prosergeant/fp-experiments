@@ -128,6 +128,17 @@ export class StreamIO<A> {
         })
     }
 
+    repeatN(n: number): StreamIO<A> {
+        const self = this
+        return new StreamIO(async function* () {
+            for (let i = 0; i < n; i++) {
+                for await (const io of self.gen()) {
+                    yield io
+                }
+            }
+        })
+    }
+
     unNone<B>(this: StreamIO<Option<B>>): StreamIO<B> {
         const self = this
         return new StreamIO(async function* () {
@@ -194,6 +205,46 @@ export class StreamIO<A> {
                 if (buffer.length === n) {
                     yield IO.Of([...buffer])
                 }
+            }
+        })
+    }
+
+    chunkN(n: number): StreamIO<A[]> {
+        const self = this
+
+        return new StreamIO(async function* () {
+            if (n <= 0) {
+                throw new Error('chunkN size must be > 0')
+            }
+
+            const buffer: A[] = []
+
+            for await (const io of self.gen()) {
+                const value = await io.run()
+
+                // Добавляем новое значение
+                buffer.push(value)
+
+                if (buffer.length === n) {
+                    yield IO.Delay(() => buffer)
+                    buffer.length = 0
+                }
+            }
+
+            // если остался хвост — тоже вернуть
+            if (buffer.length > 0) {
+                yield IO.Delay(() => buffer)
+            }
+        })
+    }
+
+    scanReduce<B>(zero: B, f: (acc: B, value: A) => B): StreamIO<B> {
+        const self = this
+        return new StreamIO(async function* () {
+            let acc = zero
+            for await (const io of self.gen()) {
+                acc = f(acc, await io.run())
+                yield IO.Delay(() => acc)
             }
         })
     }
