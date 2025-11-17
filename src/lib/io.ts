@@ -294,6 +294,45 @@ export class StreamIO<A> {
         })
     }
 
+    share(): StreamIO<A> {
+        const self = this
+        const gen = self.gen() // общий генератор
+        const buffer: IO<A>[] = [] // Для будущих читателей
+        let reading = false
+        let done = false
+
+        return new StreamIO(async function* () {
+            let index = 0
+
+            while (true) {
+                if (index < buffer.length) {
+                    yield buffer[index]
+                    index++
+                    continue
+                }
+
+                if (done) return
+
+                if (!reading) {
+                    reading = true
+                    const { value, done: isDone } = await gen[Symbol.asyncIterator]().next()
+                    reading = false
+
+                    if (isDone) {
+                        done = true
+                        return
+                    }
+
+                    buffer.push(value)
+                    yield value
+                    index++
+                } else {
+                    await new Promise((resolve) => setTimeout(resolve, 0))
+                }
+            }
+        })
+    }
+
     compile() {
         const self = this
 
