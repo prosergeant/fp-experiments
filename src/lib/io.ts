@@ -267,6 +267,33 @@ export class StreamIO<A> {
         })
     }
 
+    memoize(): StreamIO<A> {
+        const self = this
+        let cache: IO<A>[] | null = null
+        let computing: Promise<void> | null = null
+
+        async function computeCache() {
+            const result: IO<A>[] = []
+            for await (const io of self.gen()) {
+                result.push(io)
+            }
+            cache = result
+        }
+
+        return new StreamIO(async function* () {
+            if (!cache) {
+                if (!computing) {
+                    computing = computeCache()
+                }
+                await computing
+            }
+
+            for (const io of cache!) {
+                yield io
+            }
+        })
+    }
+
     compile() {
         const self = this
 
@@ -287,7 +314,7 @@ export class StreamIO<A> {
                         await io.run()
                     }
                 })
-            },
+            }
         }
     }
 }
