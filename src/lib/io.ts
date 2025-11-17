@@ -1,4 +1,4 @@
-import { Option } from '@/lib/option'
+import { Option } from './option'
 
 export class IO<A> {
     private constructor(private readonly thunk: () => Promise<A>) {}
@@ -95,12 +95,12 @@ export class StreamIO<A> {
         })
     }
 
-    tap(f: (a: A) => IO<any>): StreamIO<A> {
+    tap(f: (a: A) => void): StreamIO<A> {
         const self = this
         return new StreamIO(async function* () {
             for await (const io of self.gen()) {
                 const a = await io.run()
-                await f(a).run()
+                f(a)
                 yield IO.Of(a)
             }
         })
