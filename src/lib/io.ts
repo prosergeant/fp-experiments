@@ -76,10 +76,17 @@ export class StreamIO<A> {
         const self = this
         return new StreamIO(async function* () {
             for await (const io of self.gen()) {
-                const a = await io.run()
-                const inner = f(a)
-                for await (const io2 of inner.gen()) {
-                    yield io2
+                try {
+                    const a = await io.run()
+                    const inner = f(a)
+                    for await (const io2 of inner.gen()) {
+                        yield io2
+                    }
+                } catch (e) {
+                    if (e === Symbol.for('skip')) {
+                        continue
+                    }
+                    throw e
                 }
             }
         })
@@ -104,9 +111,10 @@ export class StreamIO<A> {
         const self = this
         return new StreamIO(async function* () {
             for await (const io of self.gen()) {
-                const a = await io.run()
-                f(a)
-                yield IO.Of(a)
+                yield io.map((a) => {
+                    f(a)
+                    return a
+                })
             }
         })
     }
@@ -206,19 +214,24 @@ export class StreamIO<A> {
             const buffer: A[] = []
 
             for await (const io of self.gen()) {
-                const value = await io.run()
+                try {
+                    const value = await io.run()
 
-                // Добавляем новое значение
-                buffer.push(value)
+                    // Добавляем новое значение
+                    buffer.push(value)
 
-                // Если переполнились — удаляем старое
-                if (buffer.length > n) {
-                    buffer.shift()
-                }
+                    // Если переполнились — удаляем старое
+                    if (buffer.length > n) {
+                        buffer.shift()
+                    }
 
-                // Начинаем yield'ить когда буфер заполнен
-                if (buffer.length === n) {
-                    yield IO.Of([...buffer])
+                    // Начинаем yield'ить когда буфер заполнен
+                    if (buffer.length === n) {
+                        yield IO.Of([...buffer])
+                    }
+                } catch (e) {
+                    if (e === Symbol.for('skip')) continue
+                    throw e
                 }
             }
         })
@@ -235,14 +248,19 @@ export class StreamIO<A> {
             const buffer: A[] = []
 
             for await (const io of self.gen()) {
-                const value = await io.run()
+                try {
+                    const value = await io.run()
 
-                // Добавляем новое значение
-                buffer.push(value)
+                    // Добавляем новое значение
+                    buffer.push(value)
 
-                if (buffer.length === n) {
-                    yield IO.Delay(() => buffer)
-                    buffer.length = 0
+                    if (buffer.length === n) {
+                        yield IO.Delay(() => buffer)
+                        buffer.length = 0
+                    }
+                } catch (e) {
+                    if (e === Symbol.for('skip')) continue
+                    throw e
                 }
             }
 
@@ -258,8 +276,11 @@ export class StreamIO<A> {
         return new StreamIO(async function* () {
             let acc = zero
             for await (const io of self.gen()) {
-                acc = f(acc, await io.run())
-                yield IO.Delay(() => acc)
+                yield IO.Delay(async () => {
+                    const value = await io.run()
+                    acc = f(acc, value)
+                    return acc
+                })
             }
         })
     }
