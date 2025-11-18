@@ -28,6 +28,11 @@ const router = createRouter({
             path: '/io/test5',
             component: () => import('@/pages/io/Test5.vue'),
         },
+        {
+            name: 'IO-Test6',
+            path: '/io/test6',
+            component: () => import('@/pages/io/Test6.vue'),
+        },
     ],
 })
 

@@ -62,7 +62,7 @@ const start = async () => {
 </script>
 
 <template>
-    <div class="test4">
+    <div class="test5">
         <p>streams and chunks</p>
         <button @click="start">start</button>
         <p>time diff: {{ diff / 1000 }}s</p>
