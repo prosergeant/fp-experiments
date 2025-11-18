@@ -89,8 +89,13 @@ export class StreamIO<A> {
         const self = this
         return new StreamIO(async function* () {
             for await (const io of self.gen()) {
-                const a = await io.run()
-                if (p(a)) yield IO.Of(a)
+                yield IO.Delay(async () => {
+                    const a = await io.run()
+                    if (p(a)) {
+                        return a
+                    }
+                    throw Symbol.for('skip')
+                })
             }
         })
     }
@@ -109,10 +114,19 @@ export class StreamIO<A> {
     take(n: number): StreamIO<A> {
         const self = this
         return new StreamIO(async function* () {
-            let i = 0
+            let count = 0
             for await (const io of self.gen()) {
-                if (i++ >= n) break
-                yield io
+                if (count >= n) break
+
+                yield IO.Delay(async () => {
+                    try {
+                        const value = await io.run()
+                        count++
+                        return value
+                    } catch (e) {
+                        throw e
+                    }
+                })
             }
         })
     }
@@ -143,10 +157,11 @@ export class StreamIO<A> {
         const self = this
         return new StreamIO(async function* () {
             for await (const io of self.gen()) {
-                const opt = await io.run()
-                if (opt.isSome()) {
-                    yield IO.Of(opt.value)
-                }
+                yield IO.Delay(async () => {
+                    const opt = await io.run()
+                    if (opt.isSome()) return opt.value
+                    throw Symbol.for('skip')
+                })
             }
         })
     }
@@ -362,7 +377,14 @@ export class StreamIO<A> {
                 return IO.Delay(async () => {
                     const out: A[] = []
                     for await (const io of self.gen()) {
-                        out.push(await io.run())
+                        try {
+                            out.push(await io.run())
+                        } catch (e) {
+                            if (e === Symbol.for('skip')) {
+                                continue // пропускаем отфильтрованные элементы
+                            }
+                            throw e
+                        }
                     }
                     return out
                 })
@@ -374,7 +396,7 @@ export class StreamIO<A> {
                         await io.run()
                     }
                 })
-            }
+            },
         }
     }
 }
