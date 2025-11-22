@@ -406,6 +406,29 @@ export class StreamIO<A> {
         const self = this
 
         return {
+            first(): IO<Option<A>> {
+                return IO.Delay(async () => {
+                    const it = self.gen()[Symbol.asyncIterator]()
+
+                    while (true) {
+                        const { value, done } = await it.next()
+
+                        if (done) {
+                            return Option.None()
+                        }
+
+                        try {
+                            return Option.Some(await value.run())
+                        } catch (e) {
+                            if (e === Symbol.for('skip')) {
+                                continue
+                            }
+                            throw e
+                        }
+                    }
+                })
+            },
+
             toArray(): IO<A[]> {
                 return IO.Delay(async () => {
                     const out: A[] = []
