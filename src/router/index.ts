@@ -33,6 +33,11 @@ const router = createRouter({
             path: '/io/test6',
             component: () => import('@/pages/io/Test6.vue'),
         },
+        {
+            name: 'IO-Test7',
+            path: '/io/test7',
+            component: () => import('@/pages/io/Test7.vue'),
+        },
     ],
 })
 
