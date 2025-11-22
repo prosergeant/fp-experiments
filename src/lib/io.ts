@@ -183,7 +183,11 @@ export class StreamIO<A> {
                     try {
                         const v = await io.run()
                         yield IO.Of(v)
+
+                        // TODO: прокидывать ошибки на вверх
                     } catch (ioErr) {
+                        if (ioErr === Symbol.for('skip')) continue
+
                         // Ошибка внутри IO — fallback
                         const fallback = other()
                         for await (const io2 of fallback.gen()) {
@@ -192,13 +196,17 @@ export class StreamIO<A> {
                         return
                     }
                 }
+
+                // TODO: прокидывать ошибки на вверх
             } catch (streamErr) {
-                // Ошибка в самом генераторе — тоже fallback
-                const fallback = other()
-                for await (const io2 of fallback.gen()) {
-                    yield io2
+                if (streamErr !== Symbol.for('skip')) {
+                    // Ошибка в самом генераторе — тоже fallback
+                    const fallback = other()
+                    for await (const io2 of fallback.gen()) {
+                        yield io2
+                    }
+                    return
                 }
-                return
             }
         })
     }
@@ -309,17 +317,21 @@ export class StreamIO<A> {
         let lastItem: IO<A> | undefined
 
         return new StreamIO(async function* () {
-            // Первый поток
-            for await (const io of self.gen()) {
-                lastItem = io
-                yield io
-            }
+            try {
+                // Первый поток
+                for await (const io of self.gen()) {
+                    lastItem = io
+                    yield io
+                }
 
-            // Лениво создаём второй поток
-            const snd = await other(lastItem?.run?.())
+                // Лениво создаём второй поток
+                const snd = await other(lastItem?.run?.())
 
-            for await (const io of snd.gen()) {
-                yield io
+                for await (const io of snd.gen()) {
+                    yield io
+                }
+            } catch (e) {
+                if (e !== Symbol.for('skip')) throw e
             }
         })
     }
