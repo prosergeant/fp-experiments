@@ -311,21 +311,20 @@ export class StreamIO<A> {
         })
     }
 
-    appendWithLast(other: (la?: Promise<A>) => Promise<StreamIO<A>>): StreamIO<A> {
+    appendWithLast(other: (lastValue?: A) => StreamIO<A> | Promise<StreamIO<A>>): StreamIO<A> {
         const self = this
-
-        let lastItem: IO<A> | undefined
 
         return new StreamIO(async function* () {
             try {
-                // Первый поток
+                let lastItem: IO<A> | undefined
+
                 for await (const io of self.gen()) {
                     lastItem = io
                     yield io
                 }
 
                 // Лениво создаём второй поток
-                const snd = await other(lastItem?.run?.())
+                const snd = await other(await lastItem?.run())
 
                 for await (const io of snd.gen()) {
                     yield io
