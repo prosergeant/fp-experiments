@@ -454,4 +454,37 @@ export class StreamIO<A> {
             },
         }
     }
+
+    iterator() {
+        const generator = this.gen()
+
+        const next = async (): Promise<Option<IO<A>>> => {
+            const { value, done } = await generator[Symbol.asyncIterator]().next()
+            return done ? Option.None() : Option.fromNullable(value)
+        }
+
+        const nextN = async (n: number): Promise<A[]> => {
+            const res: A[] = []
+            for (let i = 0; i < n; i++) {
+                try {
+                    const vOpt = await next()
+                    const v = await vOpt.match<Promise<A | void>>({
+                        some: (io) => io.run(),
+                        none: () => Promise.resolve(),
+                    })
+                    if (v === undefined) break
+                    res.push(v)
+                } catch (e) {
+                    if (e === Symbol.for('skip')) continue
+                    throw e
+                }
+            }
+            return res
+        }
+
+        return {
+            next,
+            nextN,
+        }
+    }
 }
