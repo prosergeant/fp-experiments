@@ -1,0 +1,33 @@
+{
+  "products": [
+    {
+      "productCode": 109,
+      "productName": "KMF-Достар",
+      "minSum": 50000,
+      "maxSum": 7000000,
+      "minTerm": 1,
+      "maxTerm": 60,
+      "ranges": [
+        {
+          "minSum": 50000,
+          "maxSum": 2000000,
+          "minTerm": 1,
+          "maxTerm": 3,
+          "rate": 0.1,
+          "insurancePremium": 3.5,
+          "insuranceRule": "FORCE_ON"
+        },
+        {
+          "minSum": 50000,
+          "maxSum": 7000000,
+          "minTerm": 3,
+          "maxTerm": 60,
+          "rate": 40,
+          "insurancePremium": null,
+          "insuranceRule": "OPTIONAL",
+          "insuranceRule2": "FORBIDDEN"
+        }
+      ]
+    }
+  ]
+}
