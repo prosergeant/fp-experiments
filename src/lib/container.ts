@@ -26,6 +26,9 @@ type Binding<T> = {
 }
 
 class Container {
+    // Ссылка на родительский контейнер
+    constructor(private parent?: Container) {}
+
     private bindings = new Map<Token<any>, Binding<any>[]>()
 
     // кэш singleton-инстансов (factory тоже может быть singleton)
@@ -33,6 +36,11 @@ class Container {
 
     // защита от повторной активации
     private activated = new WeakSet<object>()
+
+    // Создает новый контейнер, который "наследует" текущие биндинги
+    createChild(): Container {
+        return new Container(this)
+    }
 
     register<T>(token: Token<T>, provider: Provider<T>, scope: Scope = 'Singleton') {
         const arr = this.bindings.get(token) || []
@@ -61,8 +69,13 @@ class Container {
         }
     }
 
-    resolve<T>(token: Token<T>, ctx: ResolveContext = {}): T {
+    resolve<T>(token: Token<T>, ctx: ResolveContext = {}, origin: Container = this): T {
         const bindings = this.bindings.get(token)
+
+        // Если в текущем контейнере нет биндинга, идем к родителю
+        if ((!bindings || bindings.length === 0) && this.parent) {
+            return this.parent.resolve(token, ctx, origin)
+        }
 
         if (!bindings || bindings.length === 0) {
             throw new Error(`No bindings for token ${token?.toString()}`)
@@ -95,7 +108,7 @@ class Container {
 
         // если объект — активировать граф
         if (typeof instance === 'object' && instance !== null) {
-            this.activateDeep(instance, ctx)
+            origin.activateDeep(instance, ctx)
         }
 
         if (binding.scope === 'Singleton') {
