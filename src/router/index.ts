@@ -43,6 +43,26 @@ const router = createRouter({
             path: '/spec/test1',
             component: () => import('@/pages/patterns/specification/Test1.vue'),
         },
+        {
+            name: 'DI-Test1',
+            path: '/di/test1',
+            component: () => import('@/pages/patterns/DI/Test1.vue'),
+        },
+        {
+            name: 'DI-Test2',
+            path: '/di/test2',
+            component: () => import('@/pages/patterns/DI/Test2.vue'),
+        },
+        {
+            name: 'DI-Test3',
+            path: '/di/test3',
+            component: () => import('@/pages/patterns/DI/Test3.vue'),
+        },
+        {
+            name: 'DI-Test4',
+            path: '/di/test4',
+            component: () => import('@/pages/patterns/DI/Test4/Test4.vue'),
+        },
     ],
 })
 
