@@ -13,6 +13,11 @@
 
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+
+    "target": "ESNext",
+    "module": "ESNext",
+    "experimentalDecorators": false,
+    "useDefineForClassFields": true
   }
 }
