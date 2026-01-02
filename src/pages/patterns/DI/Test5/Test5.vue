@@ -9,11 +9,6 @@ const { CLIENT_CARD: CLIENT_CARD2 } = useSomeComposable()
 
 <template>
     <pre>{{ CLIENT_CARD }}</pre>
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
     <pre>{{ CLIENT_CARD2 }}</pre>
 </template>
 

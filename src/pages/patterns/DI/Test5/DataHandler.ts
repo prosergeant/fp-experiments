@@ -1,6 +1,6 @@
 import { Inject } from '@/lib/inject'
 import { DATA_LOADING_CONTEXT } from '@/pages/patterns/DI/Test5/tokens.ts'
-import type { Ref } from 'vue'
+import { useClientStore } from '@/stores/useClientStore.ts'
 
 export enum CLIENT_TYPE {
     odin = 1,
@@ -11,14 +11,7 @@ export enum CLIENT_TYPE {
 export interface IDataLoadingContext {
     route: string
     clientType: CLIENT_TYPE
-    clientStore: {
-        CLIENT_CARD: Ref<{
-            IIN?: string
-            isPersonBaseHandlerLoaded?: boolean
-            someKey?: string
-        }>
-        updateClientCard: (ctx: any) => void
-    }
+    clientStore: ReturnType<typeof useClientStore>
     fetchReferenceList: (ctx: any) => Promise<void>
 }
 

@@ -5,7 +5,7 @@ import { Option } from '@/lib/option'
 import { OptionRequestCache } from '@/lib/optionReqCache'
 import { createToken, Inject } from '@/lib/inject'
 import { container } from '@/lib/container.ts'
-import { type IReferences } from '@/pages/patterns/DI/Test5/useGeneralInfo'
+import type { IReferences } from '@/stores/useReferenceStore.ts'
 
 export type TContractor = [CLIENT_TYPE, string]
 type TAgreement = { DATE_OF_OVERDUE_START: string }
@@ -74,7 +74,7 @@ export class GeneralInfoHandler extends DataHandler {
         [person.LASTNAME?.RU, person.FIRSTNAME?.RU, person.MIDDLENAME?.RU].filter(Boolean).join(' ')
 
     protected async canHandle(): Promise<boolean> {
-        return !!this.context.clientStore.CLIENT_CARD.value.IIN
+        return !!this.context.clientStore.CLIENT_CARD.IIN
     }
 
     private getElFromReference = <T extends IReferences>(
@@ -87,22 +87,9 @@ export class GeneralInfoHandler extends DataHandler {
             .map((arr) => arr.find((el) => el?.[idKey] === id) as T)
 
     protected async process(): Promise<void> {
-        this.contractor = [this.context.clientType, this.context.clientStore.CLIENT_CARD.value.IIN!]
+        this.contractor = [this.context.clientType, this.context.clientStore.CLIENT_CARD.IIN!]
 
-        await this.loadReferences()
         await this.loadParseHistsLaws()
-    }
-
-    private async loadReferences() {
-        await this.context.fetchReferenceList({
-            referenceKey: 'R_SOME_REF2',
-            table: 'R_SOME_REF2',
-        })
-        await this.context.fetchReferenceList({
-            referenceKey: 'R_SOME_REF1',
-            table: 'R_SOME_REF1',
-            columns: ['BIN', 'SHORT_NAME'],
-        })
     }
 
     private async loadParseHistsLaws(
