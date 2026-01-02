@@ -10,6 +10,7 @@ import { PERSON_BASE_HANDLER } from '@/pages/patterns/DI/Test5/PersonBaseHandler
 import { SOME_HANDLER } from '@/pages/patterns/DI/Test5/SomeHandler.ts'
 import { GENERAL_INFO_HANDLER } from '@/pages/patterns/DI/Test5/GeneralInfoHandler.ts'
 import { useReferenceStore } from '@/stores/useReferenceStore.ts'
+import { computed } from 'vue'
 
 export function useSomeComposable() {
     const scope = container.createChild()
@@ -30,11 +31,11 @@ export function useSomeComposable() {
         .setNext(step2)
         .setNext(step3)
         .start()
-        .then((ctx) => {
+        .then(() => {
             context.clientStore.CLIENT_CARD.IIN = '4556'
         })
 
     return {
-        CLIENT_CARD: context.clientStore.CLIENT_CARD,
+        CLIENT_CARD: computed(() => context.clientStore.CLIENT_CARD),
     }
 }
