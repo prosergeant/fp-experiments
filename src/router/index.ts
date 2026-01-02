@@ -68,6 +68,11 @@ const router = createRouter({
             path: '/di/test5',
             component: () => import('@/pages/patterns/DI/Test5/Test5.vue'),
         },
+        {
+            name: 'DI-Test5-1',
+            path: '/di/test5-1',
+            component: () => import('@/pages/patterns/DI/Test5/Test5-1.vue'),
+        },
     ],
 })
 

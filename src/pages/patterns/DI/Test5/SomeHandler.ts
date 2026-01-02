@@ -13,6 +13,7 @@ export class SomeHandler extends DataHandler {
     }
 
     protected async process(): Promise<void> {
+        console.log('SomeHandler')
         this.context.clientStore.CLIENT_CARD.someKey = this.someKey
     }
 }
